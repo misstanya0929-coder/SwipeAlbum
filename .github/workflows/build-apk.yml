@@ -1,0 +1,47 @@
+name: Build SwipeAlbum APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'SwipeAlbum-v0.1.1-cloud-build.zip'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract build pack
+        run: |
+          mkdir -p build-pack
+          unzip -o SwipeAlbum-v0.1.1-cloud-build.zip -d build-pack
+          unzip -o build-pack/SwipeAlbum-v0.1.1-source.zip -d .
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build debug APK
+        working-directory: SwipeAlbum
+        run: gradle assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwipeAlbum-debug-apk
+          path: SwipeAlbum/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
